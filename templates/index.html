@@ -5,7 +5,37 @@
 <link rel="stylesheet"
 	href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
 	integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
-	crossorigin="anonymous" />
+	crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-2.1.1.min.js"
+	integrity="sha256-h0cGsrExGgcZtSZ/fRz4AwV+Nn6Urh/3v3jFRQ0w9dQ="
+	crossorigin="anonymous"></script>
+<script
+	src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+	integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+	crossorigin="anonymous"></script>
+<script
+	src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+	integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+	crossorigin="anonymous"></script>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		var y = document.getElementsByName("eBtn")[0];
+		y.addEventListener("click", function(e) {
+			e.preventDefault();
+			var href = $(this).attr('href');
+			console.log(href);
+			$.get(href, function(result, status) {
+				var point = JSON.parse(result);
+				$('.myForm #pointId').val(point.pointId);
+				$('.myForm #pointLatitude').val(point.pointLatitude);
+				$('.myForm #pointLongitude').val(point.pointLongitude);
+				$('.myForm #pointName').val(point.pointName);
+			});
+			$('.myForm #editModal').modal();
+		});
+	});
+</script>
 </head>
 <body>
 	<form class="row w-100 pl-5 pt-4" action="/save" method="post">
@@ -43,17 +73,70 @@
 				<td>{{point.pointName}}</td>
 				<td>{{point.pointLatitude}}</td>
 				<td>{{point.pointLongitude}}</td>
-				<td><a href="#">Edit</a></td>
-				<td><form action="/delete" method=post>
-						<input type=hidden value="{{point.pointId}}" name="pointId" />
-						<input type=submit value="Delete" />
-					</form></td>
+				<td><a href="/findOnePoint?pointId={{point.pointId}}"
+					class="btn btn-info btn-xs" name="eBtn">Edit</a></td>
+
+				<td>
+					<form action="/delete" method=post>
+						<input type=hidden value="{{point.pointId}}" name="pointId" /> <input
+							type=submit class="btn btn-danger btn-xs" value="Delete" />
+					</form>
+				</td>
+
 				<td><a href="#">Map It</a></td>
 				<td><a href="#">Temperature</a></td>
 			</tr>
 			{% endfor %}
 		</table>
 
+	</div>
+
+
+
+	<div class="myForm">
+		<div id="editModal" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+
+				<!-- Modal content-->
+				<div class="modal-content">
+					<div class="modal-body">
+						<div class="container my-3">
+							<div class="row">
+								<div class="col-md-12 mx-auto">
+									<h2>Edit Point</h2>
+
+									<form class="row w-100 pl-5 pt-4" action="/save" method="post">
+										<div class="form-row w-100 ">
+											<div class="form-group col-md-3 ">
+												<input type="hidden" class="form-control" id="pointId"
+													name="pointId" />
+												<input type="text" class="form-control" id="pointLatitude"
+													name="pointLatitude" placeholder="Latitude" required />
+											</div>
+											<div class="form-group col-md-3">
+												<input type="text" class="form-control" id="pointLongitude"
+													name="pointLongitude" placeholder="Longitude" required />
+											</div>
+											<div class="form-group col-md-3">
+												<input type="text" class="form-control" id="pointName"
+													name="pointName" placeholder="Name" required />
+											</div>
+											<div class="form-group col-md-3 mx-auto ">
+												<input type="submit" value="Submit" class="btn btn-danger" />
+											</div>
+										</div>
+									</form>
+
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </body>
 </html>

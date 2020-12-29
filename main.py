@@ -1,4 +1,4 @@
-import os, jinja2, webapp2
+import os, jinja2, webapp2, json
 
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape = True)
@@ -26,12 +26,16 @@ class SavePoint(webapp2.RequestHandler):
     def post(self):
         global nextId
         global pointList
+        pointId = self.request.get('pointId')
         name = self.request.get('pointName')
         latitude = self.request.get('pointLatitude')
         longitude = self.request.get('pointLongitude')
+        if pointId!="":
+            pointList=[i for i in pointList if (i.get('pointId') != int(pointId))] 
         pointList.append(dict(pointId=nextId, pointName=name, pointLatitude=latitude, pointLongitude=longitude))
         nextId+=1
         self.redirect('/')
+    
 
 class DeletePoint(webapp2.RequestHandler):
     def post(self):
@@ -39,5 +43,14 @@ class DeletePoint(webapp2.RequestHandler):
         pointId = self.request.get('pointId')        
         pointList=[i for i in pointList if (i.get('pointId') != int(pointId))]        
         self.redirect('/')
+        
+class FindOnePoint(webapp2.RequestHandler):
+    def get(self):
+        global pointList
+        pointId = self.request.get('pointId')
+        for i in pointList:
+            if i.get('pointId') == int(pointId):
+                self.response.out.write(json.dumps(i))
+                return
 
-app = webapp2.WSGIApplication([('/', MainPage),('/save',SavePoint),('/delete',DeletePoint)], debug=True)
+app = webapp2.WSGIApplication([('/', MainPage),('/save',SavePoint),('/delete',DeletePoint),('/findOnePoint',FindOnePoint)], debug=True)
