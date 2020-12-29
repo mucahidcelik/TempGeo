@@ -4,6 +4,7 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape = True)
 
 pointList = []
+nextId=1
 
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
@@ -20,14 +21,23 @@ class Handler(webapp2.RequestHandler):
 class MainPage(Handler):
     def get(self):
         self.display_html("index.html", points = pointList)
-    
+
+class SavePoint(webapp2.RequestHandler):
     def post(self):
+        global nextId
+        global pointList
         name = self.request.get('pointName')
         latitude = self.request.get('pointLatitude')
         longitude = self.request.get('pointLongitude')
-        print('n:'+name+' Lat:'+latitude+' Lng:'+longitude)
-        pointList.append(dict(pointName=name, pointLatitude=latitude, pointLongitude=longitude))
+        pointList.append(dict(pointId=nextId, pointName=name, pointLatitude=latitude, pointLongitude=longitude))
+        nextId+=1
         self.redirect('/')
 
+class DeletePoint(webapp2.RequestHandler):
+    def post(self):
+        global pointList
+        pointId = self.request.get('pointId')        
+        pointList=[i for i in pointList if (i.get('pointId') != int(pointId))]        
+        self.redirect('/')
 
-app = webapp2.WSGIApplication([('/', MainPage),('/save',MainPage)], debug=True)
+app = webapp2.WSGIApplication([('/', MainPage),('/save',SavePoint),('/delete',DeletePoint)], debug=True)
