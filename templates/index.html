@@ -17,25 +17,97 @@
 	src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
 	integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
 	crossorigin="anonymous"></script>
+<script
+	src="https://maps.googleapis.com/maps/api/js?key=<API_KEY>&callback=initMap&libraries=&v=weekly"
+	defer></script>
 
 <script type="text/javascript">
+	let map;
+	let uluru;
+	var mapIsOpen = false;
+	
 	$(document).ready(function() {
-		var y = document.getElementsByName("eBtn")[0];
-		y.addEventListener("click", function(e) {
-			e.preventDefault();
-			var href = $(this).attr('href');
-			console.log(href);
-			$.get(href, function(result, status) {
-				var point = JSON.parse(result);
-				$('.myForm #pointId').val(point.pointId);
-				$('.myForm #pointLatitude').val(point.pointLatitude);
-				$('.myForm #pointLongitude').val(point.pointLongitude);
-				$('.myForm #pointName').val(point.pointName);
+		$('#map').hide();
+		var editButtons = document.getElementsByName("eBtn");
+		editButtons.forEach(element => {
+			element.addEventListener("click", function(e) {
+				e.preventDefault();
+				var href = $(this).attr('href');
+				$.get(href, function(result, status) {
+					var point = JSON.parse(result);
+					$('.myForm #pointId').val(point.pointId);
+					$('.myForm #pointLatitude').val(point.pointLatitude);
+					$('.myForm #pointLongitude').val(point.pointLongitude);
+					$('.myForm #pointName').val(point.pointName);
+				});
+				$('.myForm #editModal').modal();
 			});
-			$('.myForm #editModal').modal();
+		});
+		
+		var mapItButtons = document.getElementsByName("mapBtn");
+		mapItButtons.forEach(element => {
+			element.addEventListener("click", function(e) {
+				e.preventDefault();
+				mapIsOpen = !mapIsOpen;
+				if (mapIsOpen){
+					var href = $(this).attr('href');
+					href = href.split('&');
+					uluru = {
+						lat :  parseFloat(href[0]),
+						lng :  parseFloat(href[1])
+					};
+					
+					map = new google.maps.Map(document.getElementById("map"), {
+						center : uluru,
+						zoom : 12,
+					});
+					const marker = new google.maps.Marker({
+						position : uluru,
+						map : map,
+					});
+					$('#map').show();
+				}else{
+					$('#map').hide();
+				}
+			});
 		});
 	});
+
+
+	
+	function initMap() {
+		uluru = {
+			lat : 39.593866,
+			lng : 34.134277
+		};
+		map = new google.maps.Map(document.getElementById("map"), {
+			center : uluru,
+			zoom : 12,
+
+		});
+		const marker = new google.maps.Marker({
+			position : uluru,
+			map : map,
+		});
+	}
 </script>
+<style type="text/css">
+/* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+#map {
+	height: 60%;
+	width: 96%;
+	margin-left: 34;
+}
+
+/* Optional: Makes the sample page fill the window. */
+html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+</style>
+
 </head>
 <body>
 	<form class="row w-100 pl-5 pt-4" action="/save" method="post">
@@ -83,7 +155,9 @@
 					</form>
 				</td>
 
-				<td><a href="#">Map It</a></td>
+				<td><a href="{{point.pointLatitude}}&{{point.pointLongitude}}"
+					class="btn btn-info btn-xs" name="mapBtn">Map It</a></td>
+
 				<td><a href="#">Temperature</a></td>
 			</tr>
 			{% endfor %}
@@ -91,7 +165,7 @@
 
 	</div>
 
-
+	<div id="map"></div>
 
 	<div class="myForm">
 		<div id="editModal" class="modal fade" role="dialog">
@@ -109,9 +183,9 @@
 										<div class="form-row w-100 ">
 											<div class="form-group col-md-3 ">
 												<input type="hidden" class="form-control" id="pointId"
-													name="pointId" />
-												<input type="text" class="form-control" id="pointLatitude"
-													name="pointLatitude" placeholder="Latitude" required />
+													name="pointId" /> <input type="text" class="form-control"
+													id="pointLatitude" name="pointLatitude"
+													placeholder="Latitude" required />
 											</div>
 											<div class="form-group col-md-3">
 												<input type="text" class="form-control" id="pointLongitude"
