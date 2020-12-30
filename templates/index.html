@@ -18,16 +18,25 @@
 	integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
 	crossorigin="anonymous"></script>
 <script
-	src="https://maps.googleapis.com/maps/api/js?key=<API_KEY>&callback=initMap&libraries=&v=weekly"
+	src="https://maps.googleapis.com/maps/api/js?key=<GOOGLE_API_KEY>&callback=initMap&libraries=&v=weekly"
 	defer></script>
+<link rel="stylesheet"
+	href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+<script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
 
 <script type="text/javascript">
 	let map;
 	let uluru;
 	var mapIsOpen = false;
+	var tempIsOpen = false;
+	var mapPointId = 0;
+	var tempPointId = 0;
 	
 	$(document).ready(function() {
+
 		$('#map').hide();
+		$('#temp-div').hide();
+		
 		var editButtons = document.getElementsByName("eBtn");
 		editButtons.forEach(element => {
 			element.addEventListener("click", function(e) {
@@ -48,10 +57,15 @@
 		mapItButtons.forEach(element => {
 			element.addEventListener("click", function(e) {
 				e.preventDefault();
-				mapIsOpen = !mapIsOpen;
+				var href = $(this).attr('href');
+				href = href.split('&');
+				if(mapPointId != parseInt(href[2])){
+					mapIsOpen = true;
+					mapPointId = parseInt(href[2]);
+				}else{
+					mapIsOpen = !mapIsOpen;
+				}
 				if (mapIsOpen){
-					var href = $(this).attr('href');
-					href = href.split('&');
 					uluru = {
 						lat :  parseFloat(href[0]),
 						lng :  parseFloat(href[1])
@@ -59,11 +73,11 @@
 					
 					map = new google.maps.Map(document.getElementById("map"), {
 						center : uluru,
-						zoom : 12,
+						zoom : 12
 					});
 					const marker = new google.maps.Marker({
 						position : uluru,
-						map : map,
+						map : map
 					});
 					$('#map').show();
 				}else{
@@ -71,25 +85,91 @@
 				}
 			});
 		});
+		
+		var tempButtons = document.getElementsByName("tempBtn");
+		tempButtons.forEach(element => {
+			element.addEventListener("click", function(e) {
+				e.preventDefault();
+				var href = $(this).attr('href');
+				href = href.split('&');
+				if(tempPointId != parseInt(href[2])){
+					tempIsOpen = true;
+					tempPointId = parseInt(href[2]);
+				}else{
+					tempIsOpen = !tempIsOpen;
+				}
+				if (tempIsOpen){
+					var apikey = '<APIKEY>';
+					var url = 'https://world.tarla.in/v3/weather?lat='+href[0]+'&lng='+href[1];
+					console.log('apikey:'+apikey);
+					console.log('url:'+url);
+					var data;
+					$.ajax({
+			            url: url,
+			            type: "GET",
+			            dataType: "json",
+			            async: false,
+			            headers: { "apikey": apikey },
+			            success: function(response) {
+			            	console.log(response);
+			            	data = response;
+			            },
+			            error: function(response) {
+			            	console.log('Error getting temperature!');
+			            }
+			        });
+					
+					var times=[];
+					var maxTemperatures=[];
+					var minTemperatures=[];
+					
+					data.daily.forEach(element => {
+						times.push(element.time);
+						maxTemperatures.push(element.temperature_max);
+						minTemperatures.push(element.temperature_min);
+					});
+					
+					console.log(times);
+					console.log(maxTemperatures);
+					console.log(minTemperatures);
+					
+					new Chartist.Line('.ct-chart', {
+						  labels: times,
+						  series: [
+							  maxTemperatures,
+							  minTemperatures
+						  ]
+						}, {
+						  fullWidth: true,
+						  chartPadding: {
+							left:34,
+						    right: 37
+						  },
+						  height:'400px'
+						});
+					$('#temp-div').show();
+				}else{
+					$('#temp-div').hide();
+				}
+			});
+		});
 	});
 
-
-	
 	function initMap() {
 		uluru = {
-			lat : 39.593866,
-			lng : 34.134277
+			lat : 0,
+			lng : 0
 		};
 		map = new google.maps.Map(document.getElementById("map"), {
 			center : uluru,
-			zoom : 12,
-
+			zoom : 12
 		});
 		const marker = new google.maps.Marker({
 			position : uluru,
 			map : map,
 		});
 	}
+
 </script>
 <style type="text/css">
 /* Always set the map height explicitly to define the size of the div
@@ -147,18 +227,16 @@ html, body {
 				<td>{{point.pointLongitude}}</td>
 				<td><a href="/findOnePoint?pointId={{point.pointId}}"
 					class="btn btn-info btn-xs" name="eBtn">Edit</a></td>
-
-				<td>
-					<form action="/delete" method=post>
+				<td><form action="/delete" method=post>
 						<input type=hidden value="{{point.pointId}}" name="pointId" /> <input
 							type=submit class="btn btn-danger btn-xs" value="Delete" />
-					</form>
-				</td>
-
-				<td><a href="{{point.pointLatitude}}&{{point.pointLongitude}}"
+					</form></td>
+				<td><a
+					href="{{point.pointLatitude}}&{{point.pointLongitude}}&{{point.pointId}}"
 					class="btn btn-info btn-xs" name="mapBtn">Map It</a></td>
-
-				<td><a href="#">Temperature</a></td>
+				<td><a
+					href="{{point.pointLatitude}}&{{point.pointLongitude}}&{{point.pointId}}"
+					class="btn btn-info btn-xs" name="tempBtn">Temperature</a></td>
 			</tr>
 			{% endfor %}
 		</table>
@@ -166,6 +244,7 @@ html, body {
 	</div>
 
 	<div id="map"></div>
+	<div id="temp-div" class="ct-chart"></div>
 
 	<div class="myForm">
 		<div id="editModal" class="modal fade" role="dialog">
